@@ -1,0 +1,85 @@
+version: '3.2'
+
+volumes:
+  postgres: {}
+  redis: {}
+
+networks:
+  default:
+    driver: bridge
+    ipam:
+      config:
+      - subnet: 172.20.0.0/16
+
+services:
+  logs:
+    image: gliderlabs/logspout
+    entrypoint:
+    - '/bin/logspout'
+    - '${LOGSPOUT_ENDPOINT}'
+    environment:
+      SYSLOG_HOSTNAME: ${SYSLOG_HOSTNAME:-em2}
+    volumes:
+    - /var/run/docker.sock:/var/run/docker.sock
+
+  postgres:
+    image: postgres:9.6-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: docker
+    volumes:
+    - postgres:/var/lib/postgresql/data
+    depends_on:
+    - logs
+
+  redis:
+    image: redis:3.0-alpine
+    volumes:
+    - redis:/data
+    restart: always
+    depends_on:
+    - logs
+
+  nginx:
+    image: em2-nginx
+    restart: always
+    ports:
+    - 443:443
+    depends_on:
+    - logs
+
+  web:
+    image: em2
+    environment:
+      EM2_COMMAND: web
+      EM2_DEBUG: 'true'
+      EM2_PG_HOST: postgres
+      EM2_PG_PASSWORD: docker
+      EM2_R_HOST: redis
+      EM2_LOCAL_DOMAIN: ${EM2_LOCAL_DOMAIN}
+      EM2_SECRET_SESSION_KEY: ${EM2_SECRET_SESSION_KEY}
+    restart: always
+    networks:
+      default:
+        ipv4_address: 172.20.0.101
+    depends_on:
+    - postgres
+    - redis
+    - logs
+
+  worker:
+    image: em2
+    environment:
+      EM2_COMMAND: worker
+      EM2_DEBUG: 'true'
+      EM2_PG_HOST: postgres
+      EM2_PG_PASSWORD: docker
+      EM2_R_HOST: redis
+      EM2_LOCAL_DOMAIN: ${EM2_LOCAL_DOMAIN}
+      EM2_SECRET_SESSION_KEY: ${EM2_SECRET_SESSION_KEY}
+    restart: always
+    depends_on:
+    - postgres
+    - redis
+    - logs

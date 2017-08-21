@@ -1,0 +1,4 @@
+nginx/keys*/
+activate.*
+nginx/_build.nginx.conf
+.idea/
