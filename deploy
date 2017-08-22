@@ -7,14 +7,14 @@ if [ "$MODE" != "DEPLOY" ] ; then
 fi
 
 echo "building em2 image..."
-../em2/docker/build.sh
+../em2/docker/build.sh ${PRIVATE_KEY_FILE}
 
-sed "s/{{SERVER_NAME}}/${EM2_LOCAL_DOMAIN}/" \
+sed "s/{{EM2_EXTERNAL_DOMAIN}}/${EM2_EXTERNAL_DOMAIN}/g; s/{{DOMESTIC_DOMAIN}}/${DOMESTIC_DOMAIN}/g" \
  nginx/nginx.conf > nginx/_build.nginx.conf
 
 rm -r nginx/keys/ || true
 mkdir nginx/keys/
-cp nginx/keys-${EM2_LOCAL_DOMAIN}/* nginx/keys/
+cp nginx/keys-${DEPLOY_NAME}/* nginx/keys/
 
 echo "building nginx image..."
 docker build nginx -t em2-nginx -q

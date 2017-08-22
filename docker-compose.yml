@@ -18,7 +18,7 @@ services:
     - '/bin/logspout'
     - '${LOGSPOUT_ENDPOINT}'
     environment:
-      SYSLOG_HOSTNAME: ${SYSLOG_HOSTNAME:-em2}
+      SYSLOG_HOSTNAME: em2-${DEPLOY_NAME}
     volumes:
     - /var/run/docker.sock:/var/run/docker.sock
 
@@ -30,14 +30,20 @@ services:
       POSTGRES_PASSWORD: docker
     volumes:
     - postgres:/var/lib/postgresql/data
+    networks:
+      default:
+        ipv4_address: 172.20.0.101
     depends_on:
     - logs
 
   redis:
-    image: redis:3.0-alpine
+    image: redis:4.0-alpine
     volumes:
     - redis:/data
     restart: always
+    networks:
+      default:
+        ipv4_address: 172.20.0.102
     depends_on:
     - logs
 
@@ -48,21 +54,23 @@ services:
     - 443:443
     depends_on:
     - logs
+    - web
 
   web:
     image: em2
     environment:
       EM2_COMMAND: web
       EM2_DEBUG: 'true'
+      EM2_LOG_TIMES: 'false'
       EM2_PG_HOST: postgres
       EM2_PG_PASSWORD: docker
-      EM2_R_HOST: redis
-      EM2_LOCAL_DOMAIN: ${EM2_LOCAL_DOMAIN}
+      EM2_R_HOST: '172.20.0.102'
+      EM2_EXTERNAL_DOMAIN: ${EM2_EXTERNAL_DOMAIN}
       EM2_SECRET_SESSION_KEY: ${EM2_SECRET_SESSION_KEY}
     restart: always
     networks:
       default:
-        ipv4_address: 172.20.0.101
+        ipv4_address: 172.20.0.103
     depends_on:
     - postgres
     - redis
@@ -73,10 +81,11 @@ services:
     environment:
       EM2_COMMAND: worker
       EM2_DEBUG: 'true'
+      EM2_LOG_TIMES: 'false'
       EM2_PG_HOST: postgres
       EM2_PG_PASSWORD: docker
-      EM2_R_HOST: redis
-      EM2_LOCAL_DOMAIN: ${EM2_LOCAL_DOMAIN}
+      EM2_R_HOST: '172.20.0.102'
+      EM2_EXTERNAL_DOMAIN: ${EM2_EXTERNAL_DOMAIN}
       EM2_SECRET_SESSION_KEY: ${EM2_SECRET_SESSION_KEY}
     restart: always
     depends_on:
