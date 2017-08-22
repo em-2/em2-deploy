@@ -54,7 +54,6 @@ services:
     - 443:443
     depends_on:
     - logs
-    - web
 
   web:
     image: em2
@@ -67,6 +66,7 @@ services:
       EM2_R_HOST: '172.20.0.102'
       EM2_EXTERNAL_DOMAIN: ${EM2_EXTERNAL_DOMAIN}
       EM2_SECRET_SESSION_KEY: ${EM2_SECRET_SESSION_KEY}
+      EM2_COMMS_VERIFY_SSL: 'false'
     restart: always
     networks:
       default:
@@ -87,6 +87,7 @@ services:
       EM2_R_HOST: '172.20.0.102'
       EM2_EXTERNAL_DOMAIN: ${EM2_EXTERNAL_DOMAIN}
       EM2_SECRET_SESSION_KEY: ${EM2_SECRET_SESSION_KEY}
+      EM2_COMMS_VERIFY_SSL: 'false'
     restart: always
     depends_on:
     - postgres
